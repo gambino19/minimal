@@ -200,6 +200,6 @@ for segment, alpha, line_width in zip(segments, alphas, line_widths):
 
 for obj in canvas.order.items:
     if isinstance(obj, Line):
-        obj.noise((5,5))
+        obj.noise((20,20))
         # obj.repeat(random=True)
 canvas.show(inspect=True)

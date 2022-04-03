@@ -4,14 +4,14 @@ Minimal Objects
 """
 
 from datetime import datetime
-from functools import partial
 
 import cairo
 from colour import Color
 import cv2
 import imageio
-import noise
 import numpy as np
+
+from . import noise
 
 #TODO: Can we do 3d rotations via cv2.warpPerspective
 
@@ -207,9 +207,7 @@ class Line():
         self._lead += line.div
         self.pts = np.vstack((self.pts[:-1], line.pts[:]))
 
-    def noise(self, scale=1, method="simplex", z=datetime.now().microsecond,
-              octaves=1, persistence=0.5, lacunarity=2.0,
-              repeatx=1024, repeaty=1024, repeatz=1024):
+    def noise(self, scale=1, z=datetime.now().microsecond, **kwargs):
         """
         Using simplex or perlin noise methods to add noise in constructed line.pts
         
@@ -219,9 +217,11 @@ class Line():
                                        to axis 0, 1
             method (str): Determine which noise method to apply to lines
             z (int, float): Variable parameter to ensure random generation of noise in each run
-            ** kwargs as defined by noise.pnoise3 and noise.snoise3
+            ** kwargs as defined by noise.SimplexNoise
         
         """
+
+        snoise = noise.SimplexNoise()
 
         if isinstance(scale, int) or isinstance(scale, float):
             scalex, scaley = scale, scale
@@ -230,29 +230,13 @@ class Line():
         else:
             raise NotImplementedError("Noise scale only accepts int for uniform axis definition or tuple with length 2 for singular axis definition")
 
-        if method == "simplex":
-            _noise = noise.snoise3
-        elif method == "perlin":
-            _noise = partial(noise.pnoise3, 
-                             repeatx=repeatx, repeaty=repeaty, repeatz=repeatz)
-        else:
-            raise NotImplementedError("Noise method only accepts 'perlin' or 'simplex'")
-
         for pt in range(len(self.pts)):
-            self.pts[pt, 0] += scalex*_noise(self.pts[pt, 0]/self.div, 
-                                             self.pts[pt, 1]/self.div,
-                                             z,
-                                             octaves=octaves, 
-                                             persistence=persistence, 
-                                             lacunarity=lacunarity, 
-                                             )
-            self.pts[pt, 1] += scaley*_noise(self.pts[pt, 0]/self.div, 
-                                             self.pts[pt, 1]/self.div,
-                                             z,
-                                             octaves=octaves, 
-                                             persistence=persistence, 
-                                             lacunarity=lacunarity, 
-                                             )
+            self.pts[pt, 0] += scalex*snoise.noise3(x=self.pts[pt, 0]/self.div, 
+                                                    y=self.pts[pt, 1]/self.div,
+                                                    z=z)
+            self.pts[pt, 1] += scaley*snoise.noise3(x=self.pts[pt, 0]/self.div, 
+                                                    y=self.pts[pt, 1]/self.div,
+                                                    z=z)
     
     #TODO: Bezier Curve in Line: https://stackoverflow.com/questions/12643079/b%C3%A9zier-curve-fitting-with-scipy
 
