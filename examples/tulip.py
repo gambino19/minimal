@@ -18,7 +18,7 @@ canvas = Canvas(800, 800, fps=60, bg=Color(hex="#FFFFFF"))
 
 img = Image("./tulip.jpg", position=(150,0))
 img.resize((500,800))
-# canvas.add(img)
+
 
 # Petals
 petal1 = [(394, 323), (366, 329), (336, 325), (303, 318), (269, 304), (251, 288),
@@ -41,7 +41,7 @@ for petal in [petal1, petal2, petal3, petal4, petal5]:
     line.noise((0,0))
     canvas.add(line)
 
-# Stem
+# # Stem
 stemleft = [(465, 580), (462, 556), (455, 528), (450, 503), (440, 477), (432, 450),
   (426, 422), (421, 401), (413, 374), (404, 348), (397, 334), (384, 327)]
 stemright = [(500, 651), (495, 629), (494, 602), (489, 576), (487, 548), (484, 529), 
@@ -198,8 +198,91 @@ for segment, alpha, line_width in zip(segments, alphas, line_widths):
     line.noise((0,0))
     canvas.add(line)
 
+
+# Left Leaf
+
+segments = []
+alphas = []
+line_widths = []
+
+# Bottom
+
+b1 = [(451, 745), (443, 736), (437, 726), (433, 719), (427, 710), (421, 700), 
+      (417, 694), (409, 684), (403, 675), (397, 667), (392, 662), (387, 655), 
+      (377, 648), (372, 639), (367, 634), (357, 625), (353, 614), (346, 608), 
+      (339, 598), (332, 589)]
+shades, alphas, line_widths = repeated_shader(b1, "[i-1.5*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=1, line_width=1)
+
+b2 = [(336, 594), (330, 575), (327, 568), (325, 554), (323, 544), (320, 532), 
+      (317, 519), (314, 508), (310, 497), (309, 487)]
+shades, alphas, line_widths = repeated_shader(b2, "[i-1.5*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.8, line_width=0.8)
+
+b3 = [(307, 482), (307, 470), (307, 454), (306, 443), (304, 429), (304, 415), (306, 410)]
+shades, alphas, line_widths = repeated_shader(b3, "[i-1*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=1, line_width=1)
+
+b4 = [(473, 736), (464, 722), (454, 710), (448, 700), (440, 689), (431, 675), 
+      (422, 662), (416, 655), (410, 649)]
+shades, alphas, line_widths = repeated_shader(b4, "[i-2*i,i-0.5*i]", (0, 30, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.2, line_width=1)
+
+b5 = [(409, 649), (401, 639), (393, 629), (385, 621), (378, 612), (372, 605), 
+      (366, 596), (359, 586), (348, 574)]
+shades, alphas, line_widths = repeated_shader(b5, "[i-2*i,i-0.5*i]", (0, 60, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.05, line_width=1)
+
+b6 = [(346, 567), (341, 554), (338, 543), (336, 528), (332, 518), (331, 509), 
+      (327, 499), (325, 490)]
+shades, alphas, line_widths = repeated_shader(b6, "[i-2*i,i-0.5*i]", (0, 30, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.05, line_width=1)
+b7 = [(333, 502), (330, 496), (328, 485), (325, 477), (322, 465), (319, 457), 
+      (319, 449), (316, 438), (315, 430), (315, 423)]
+shades, alphas, line_widths = repeated_shader(b7, "[i-1.25*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.6, line_width=1)
+
+b8 = [(447, 617), (441, 605), (433, 595), (427, 588), (421, 578), (417, 571), 
+      (411, 563), (404, 550), (398, 542), (392, 536), (386, 528), (377, 517), 
+      (374, 513), (367, 504), (361, 499), (357, 494), (354, 489), (345, 481), 
+      (341, 475), (336, 470)]
+shades, alphas, line_widths = repeated_shader(b8, "[i-1.25*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.4, line_width=1)
+
+b9 = [(393, 574), (383, 561), (376, 554), (370, 545), (364, 539), (357, 531), 
+      (352, 523), (346, 514)]
+shades, alphas, line_widths = repeated_shader(b9, "[i-1.25*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.15, line_width=1)
+
+b10 = [(380, 624), (375, 617), (369, 611), (363, 604), (359, 596), (353, 590), 
+       (350, 584), (345, 576)]
+shades, alphas, line_widths = repeated_shader(b10, "[i-1.25*i,i-0.5*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.15, line_width=1)
+
+for segment, alpha, line_width in zip(segments, alphas, line_widths):
+    line = Line(segments=segment, div=30, alpha=alpha, line_width=line_width)
+    line.noise((0,0))
+    canvas.add(line)
+
+
+# Top
+
+# [(487, 688), (482, 675), (478, 667), (473, 656), (468, 643), (466, 636), (463, 625), (460, 615), (456, 605), (452, 597), (448, 591)]
+
+# canvas.add(img, index=0)
+
 for obj in canvas.order.items:
     if isinstance(obj, Line):
-        obj.noise((20,20))
+        obj.noise((10,5))
         # obj.repeat(random=True)
 canvas.show(inspect=True)
