@@ -226,7 +226,7 @@ class Canvas(ABDisplay):
         if isinstance(obj, Frame):
             self.refresh = False
         
-        if index:
+        if isinstance(index, int):
             self.order.insert(index, obj)
         else:
             self.order.append(obj)
