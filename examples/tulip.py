@@ -391,6 +391,15 @@ shades, alphas, line_widths = repeated_shader(p8, "[i-2.5*i,i-0.5*i]", (0, 5, 1)
                                               segments, alphas, line_widths,
                                               alpha=1, line_width=1, random_cond=(-5, 5))
 
+pall = [(397, 327), (390, 327), (379, 327), (370, 327), (355, 327), (341, 326), 
+        (328, 323), (315, 320), (296, 317), (284, 311), (267, 305), (260, 301), 
+        (252, 295), (242, 288), (236, 282), (230, 276), (222, 268), (214, 256), 
+        (208, 246), (202, 239), (197, 226), (188, 212), (181, 197), (178, 183), 
+        (174, 172), (168, 156), (164, 145), (163, 133), (161, 120), (161, 105)]
+shades, alphas, line_widths = repeated_shader(pall, "[i-2*i,i-0.5*i]", (0, 60, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.05, line_width=1)
+
 for segment, alpha, line_width in zip(segments, alphas, line_widths):
     line = Line(segments=segment, div=30, alpha=alpha, line_width=line_width)
     line.noise((0,0))
@@ -415,6 +424,56 @@ shades, alphas, line_widths = repeated_shader(p2, "[i+0.25*i,i-0.5*i]", (0, 10, 
 
 p3 = [(259, 137), (254, 125), (251, 115), (249, 105), (247, 97), (245, 89), (243, 83)]
 shades, alphas, line_widths = repeated_shader(p3, "[i-2.5*i,2*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.3, line_width=1)
+
+for segment, alpha, line_width in zip(segments, alphas, line_widths):
+    line = Line(segments=segment, div=30, alpha=alpha, line_width=line_width)
+    line.noise((0,0))
+    canvas.add(line)
+
+# Right
+
+segments = []
+alphas = []
+line_widths = []
+
+p1 = [(489, 255), (489, 243), (489, 230), (484, 215), (480, 203), (478, 194), 
+      (473, 186), (467, 174), (459, 162), (456, 152), (450, 138), (445, 128), 
+      (439, 114), (432, 102), (423, 91), (418, 86), (409, 76)]
+shades, alphas, line_widths = repeated_shader(p1, "[i-1.25*i,2*i]", (0, 40, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.1, line_width=1)
+
+p2 = [(462, 280), (471, 273), (478, 261), (484, 252), (489, 245), (493, 237), 
+      (501, 225), (505, 219), (511, 207)]
+shades, alphas, line_widths = repeated_shader(p2, "[i,i-2*i]", (0, 20, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.4, line_width=1) 
+
+p3 = [(484, 229), (484, 221), (481, 208), (477, 197), (472, 183)]
+shades, alphas, line_widths = repeated_shader(p3, "[i-1.5*i,i]", (0, 40, 1), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.275, line_width=1) 
+
+for segment, alpha, line_width in zip(segments, alphas, line_widths):
+    line = Line(segments=segment, div=30, alpha=alpha, line_width=line_width)
+    line.noise((0,0))
+    canvas.add(line)
+
+# Back Right
+
+segments = []
+alphas = []
+line_widths = []
+
+p1 = [(316, 72), (313, 64), (308, 60), (302, 53), (293, 51)]
+shades, alphas, line_widths = repeated_shader(p1, "[i-2.25*i,0.75*i]", (0, 40, 2), 
+                                              segments, alphas, line_widths,
+                                              alpha=0.3, line_width=1)
+
+p2 = [(387, 61), (390, 51), (390, 41), (390, 30), (386, 20)]
+shades, alphas, line_widths = repeated_shader(p2, "[i-2*i,i-2*i]", (0, 20, 2), 
                                               segments, alphas, line_widths,
                                               alpha=0.3, line_width=1)
 
