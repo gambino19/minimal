@@ -3,7 +3,7 @@
 Minimal is a Python Generative Art Framework that allows users to explore and create art using basic Computer Graphics (Cairo), Computer Vision (OpenCV), and Machine Learning (Torch).
 
 ![Example 1](./examples/snake.gif)
-![Example 2](./examples/tulip_wip.png)
+![Example 2](./examples/tulip.png)
 
 ## Roadmap
 - [X] Graphics Framework (Canvas, Frames, Shapes, Objects)
