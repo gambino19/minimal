@@ -13,4 +13,12 @@ Examples
 Creating and Showing a Display
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Test2
+References
+----------
+
+.. autoclass:: minimal.display.Frame
+	:members:
+	:inherited-members:
+	:private-members:
+	:special-members:
+	
