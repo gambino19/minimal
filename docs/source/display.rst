@@ -19,6 +19,4 @@ References
 .. autoclass:: minimal.display.Frame
 	:members:
 	:inherited-members:
-	:private-members:
-	:special-members:
 	

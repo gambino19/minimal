@@ -80,17 +80,30 @@ class ABDisplay:
         return (self.width, self.height, 4)
 
 class Frame(ABDisplay):
+    """ 
+    Static Frame Display
     
-    def __init__(self, *args, **kwargs):
-        """ 
-        Minimal Frame 
-            
-        Arguments:
-            *args: ABDisplay Argmuents
-            **kwargs: ABDisplay Keyword Arguments
-        """
+    Notes:
+        Frames can be used to represent single static display or can
+        be successively added into the Canvas object to represent a single frame
         
-        super().__init__(*args, **kwargs)
+    Keyword Arguments:
+        width (float): Frame Width
+        height (float): Frame Height
+        bg (colour.Color): Display background Color. Default: rgb(1,1,1)
+        
+    #TODO: Add attributes
+
+    Examples:
+        >>> frame = minimal.display.Frame(800, 800)
+        >>> circle = mininmal.shapes.Circle(400, 400, 100)
+        >>> frame.add(circle)
+        >>> frame.show()
+    """
+    
+    def __init__(self, width, height, bg=Color(rgb=(1,1,1))):
+        
+        super().__init__(width=width, height=height, bg=bg)
     
     @singledispatchmethod
     def add(self, obj, _index=None):
