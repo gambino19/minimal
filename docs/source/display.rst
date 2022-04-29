@@ -4,9 +4,6 @@
 :py:mod:`~minimal.display` Module
 ==================================
 
-Test
-
-
 Examples
 --------
 
