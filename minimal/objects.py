@@ -24,7 +24,9 @@ class Line():
                  alpha = 1.0,
                  csystem="cartesian",
                  offset=(0, 0),
-                 line_width=2):
+                 line_width=2,
+                 dimension=2
+                 ):
         """ 
         Minimal Generative Line
         
@@ -47,6 +49,7 @@ class Line():
             csystem (str): Coordinate system for line. Accepts 'cartesian' and 'polar'
             offset (tuple, int): x, y offset of center, useful in polar coordinate system
             line_width (float): Line Width
+            dimension (float): Specify whether object is plotted in 2d or 3d
         
         """
         

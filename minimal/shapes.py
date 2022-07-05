@@ -125,7 +125,8 @@ class CairoMinimalObject:
                 canvas.set_source_rgba(*self.fill_color.get_rgb(), self.fill_alpha)
         
         if not isinstance(self, Text):
-            canvas.fill_preserve()
+            if self.fill_color:
+                canvas.fill_preserve()
             canvas.set_source_rgba(*self.outline_color.get_rgb(), self.outline_alpha)
             canvas.set_line_width(self.outline_width)
         
@@ -359,6 +360,30 @@ class Rectangle(CairoMinimalObject):
         canvas.rectangle(self.x, self.y, self.width, self.height)
         super()._draw(canvas)
         self.transform_axis(canvas, 'down')
+        
+class Triangle(CairoMinimalObject):
+    
+    def __init__(self, vertices, **kwargs):
+        """ DOCSTRING """
+        
+        assert len(vertices) == 3, "Only three vertices allowed in triangle class"
+        
+        self.vertices = np.array(vertices)
+        
+        super().__init__(**kwargs)
+        
+    def _draw(self, canvas):
+        """ DOCSTRING """
+        
+        self.transform_axis(canvas, "up")
+        canvas.move_to(*self.vertices[0])
+        for vertex in self.vertices[1:]:
+            canvas.line_to(*vertex)
+        canvas.line_to(*self.vertices[0])
+        canvas.close_path()
+        super()._draw(canvas)
+        self.transform_axis(canvas, 'down')
+            
         
 class Polygon(CairoMinimalObject):
     
