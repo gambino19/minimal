@@ -5,6 +5,7 @@ Minimal Display Elements
 
 from functools import singledispatchmethod
 import time
+from typing import Dict, Optional, Type, Tuple, Union
 import warnings
 
 import cairo
@@ -19,22 +20,33 @@ from . import objects
 
 class ABDisplay:
     
-    def __init__(self, width, height, bg=Color(rgb=(1,1,1))):
-        """ 
-        Abstract Base Display object for Canvas and Frames
-        
-        Notes:
-            Displays Objects are limited to only 4 channel formats
-        
-        Keyword Arguments:
-            width (float): Display Width
-            height (float): Display Height
-            bg (colour.Color): Display background Color. Default: rgb(1,1,1)
-        """
+    """ 
+    Abstract Base class for display objects such as Canvas and Frames
+    
+    Attributes:
+        width (float): Display Width
+        height (float): Display Height
+        color (Color): Display background color. Default: Color(rgb=(1,1,1))
+        inspections (list): Coordinates of left-click event on display window
+        data (np.array): Pixel data for cairo.ImageSurface; can be directly 
+            modified for rendering. #TODO: Find a better description 
+        surface (cairo.ImageSurface): Cairo surface object for rendering memory buffers
+        canvas (cairo.Context): Cairo context object for drawing instructions
+    
+    Keyword Arguments:
+        width (float): Display Width
+        height (float): Display Height
+        color (Color, optional): Display background Color. Default: Color(rgb=(1,1,1))
+    """
+    
+    def __init__(self, 
+                 width: float, 
+                 height: float, 
+                 color: Optional[Type[Color]] = Color(rgb=(1,1,1))) -> None:
         
         self.width = width
         self.height = height
-        self.bg = bg
+        self.color = color
         
         self.inspections = []
         
@@ -45,10 +57,10 @@ class ABDisplay:
                                                           width, 
                                                           height)
         self.canvas = cairo.Context(self.surface)
-        self.canvas.set_source_rgba(*self.bg.get_rgb(), 1.0)
+        self.canvas.set_source_rgba(*self.color.get_rgb(), 1.0)
         self.canvas.paint()
 
-    def _inspect(self, event, x, y, flags, param):
+    def _inspect(self, event: int, x: int, y: int, flags: int, param: Union[Dict, None]) -> None:
         """ 
         Inspecting positions on ABDisplay objects via callbacks left mouse click (right click to clear)
         Handled by cv2 during cv2.imshow operation, should not be called otherwise
@@ -64,19 +76,20 @@ class ABDisplay:
             self.inspections = []
             #TODO: Clear inspections from Canvas
 
-    def to_image(self, fp):
+    def to_image(self, fp: str) -> None:
         """ 
         Save Display to Image
         
         Keyword Arguments:
-            fp (str): Filename or pathlib.Path object for Image
+            fp (str): File path for output image
         """
         
         img = cv2.cvtColor(self.data, cv2.COLOR_RGB2BGRA)
         Image.fromarray(img).save(fp)
         
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int, int, int]:
+        """ Returns shape of display object """
         return (self.width, self.height, 4)
 
 class Frame(ABDisplay):
@@ -90,7 +103,7 @@ class Frame(ABDisplay):
     Keyword Arguments:
         width (float): Frame Width
         height (float): Frame Height
-        bg (colour.Color): Display background Color. Default: rgb(1,1,1)
+        color (colour.Color): Display background Color. Default: rgb(1,1,1)
         
     #TODO: Add attributes
 
@@ -101,9 +114,9 @@ class Frame(ABDisplay):
         >>> frame.show()
     """
     
-    def __init__(self, width, height, bg=Color(rgb=(1,1,1))):
+    def __init__(self, width, height, color=Color(rgb=(1,1,1))):
         
-        super().__init__(width=width, height=height, bg=bg)
+        super().__init__(width=width, height=height, color=color)
     
     @singledispatchmethod
     def add(self, obj, _index=None):
@@ -265,7 +278,7 @@ class Canvas(ABDisplay):
         """
         
         if self.refresh:
-            self.canvas.set_source_rgba(*self.bg.get_rgb(), 1.0)
+            self.canvas.set_source_rgba(*self.color.get_rgb(), 1.0)
             self.canvas.paint()      
         for obj in self.order:
             if isinstance(obj, objects.Image) or isinstance(obj, objects.Video): #TODO: Will have to rework these methods
