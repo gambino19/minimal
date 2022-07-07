@@ -144,7 +144,7 @@ class Frame(ABDisplay):
         super().__init__(width=width, height=height, color=color)
 
     @singledispatchmethod
-    def add(self, obj: Any, _index: Optional[Union[int, None]] = None) -> None:
+    def add(self, obj: Any, _index: Optional[int] = None) -> None:
         """
         Draws drawing objects in frame
 
@@ -301,7 +301,7 @@ class Canvas(ABDisplay):
         self._fps = value
 
     @singledispatchmethod
-    def add(self, obj: Any, index: Optional[Union[int, None]] = None) -> None:
+    def add(self, obj: Any, index: Optional[int] = None) -> None:
         """
         Handles inserting drawing objects into display order
 
@@ -434,7 +434,7 @@ class Canvas(ABDisplay):
     def to_video(self,
                  fp: str,
                  fourcc: Optional[str] = "DIVX",
-                 duration: Optional[Union[int, None]] = None) -> None:
+                 duration: Optional[int] = None) -> None:
         """
         EXPERIMENTAL: How can we get canvas objects to write to some video file
         compatible across different environments?
