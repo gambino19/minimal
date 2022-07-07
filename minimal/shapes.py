@@ -2,56 +2,83 @@
 Minimal wrapper of Pycairo shapes
 """
 
+from __future__ import annotations
+
 from copy import deepcopy
 from functools import partial
 from itertools import cycle, chain
+from typing import Dict, List, Optional, Type, Union
 
 import cairo
 from cairo import Gradient, LinearGradient, RadialGradient
 from colour import Color
 import numpy as np
 
+from . import display
+
 class CairoMinimalObject:
 
-    # Transformable Variables are variables able to be transformed by the self.transform
-    # method. Each Object has their own specific transformable variables but will always
-    # have the inherited transformable variables from CairoMinimalObject. Having
-    # this be a class attribute instead of a instance attribute allows users
-    # to extend certain shape classes with more transformable variables to then
-    # be present on every instance of said shape. Class attribute extensions on
-    # base CairoMinimal object however will not be present on all inherited shapes
+    """
+    Cairo Minimal Object
+    Provides shared methods uniform across all Cairo Minimal Objects
+
+    Attributes:
+        fill_color (colour.Color, None): Shape Fill Color. If None, will not
+            fill shape
+        fill_alpha (float): Shape Fill alpha composite
+        outline_color (colour.Color): Shape Outline Color
+        outline_alpha (float): Shape Outline Alpha Composite
+        outline_width (float): Shape Outline Width
+        scalex (float): X-Axis Scaler
+        scaley (float): Y-Axis Scaler
+        rotate_angle (float): Rotation of Shape (in Radians)
+            #TODO: I think it wants it in degrees
+        preserve_pattern (bool): Preserve pattern upon location transformation
+        metadata (dict): Set shape metadata
+        pattern (cairo.Pattern): Cairo Pattern object
+        preserve_pattern (bool): Allows pattern to transform along with shape
+            if transformation methods are applied
+
+    Keyword Arguments:
+        fill_color (Color, optional): Shape Fill Color. If None, will not
+            fill shape
+        fill_alpha (float, optional): Shape Fill alpha composite
+        outline_color (Color, optional): Shape Outline Color
+        outline_alpha (float, optional): Shape Outline Alpha Composite
+        outline_width (float, optional): Shape Outline Width
+        scalex (float, optional): X-Axis Scaler
+        scaley (float, optional): Y-Axis Scaler
+        rotate_angle (float, optional): Rotation of Shape (in Radians)
+            #TODO: I think it wants it in degrees
+        preserve_pattern (bool, optional): Preserve pattern upon location
+            transformation
+        metadata (dict, optional): Set shape metadata
+    """
+
+    # Transformable Variables are variables able to be transformed by the
+    # self.transform method. Each Object has their own specific transformable
+    # variables but will always have the inherited transformable variables from
+    # CairoMinimalObject. Having this be a class attribute instead of a instance
+    # attribute allows users to extend certain shape classes with more
+    # transformable variables to then be present on every instance of said shape.
+    # Class attribute extensions on base CairoMinimal object however will not
+    # be present on all inherited shapes
     _TRANSFORMABLE_VARIABLES = ['x', 'y', 'fill_color', 'fill_alpha',
                                 'outline_color', 'outline_alpha', 'outline_width',
-                                'scalex', 'scaley'] #TODO: Scale X, Scale Y Transforms not working
+                                'scalex', 'scaley']
+    #TODO: Scale X, Scale Y Transforms not working
 
     def __init__(self,
-                 fill_color=Color(rgb=(0, 0, 0)),
-                 fill_alpha=1.0,
-                 outline_color=Color(rgb=(1, 1, 1)),
-                 outline_alpha=1.0,
-                 outline_width=1.0,
-                 scalex=1.0,
-                 scaley=1.0,
-                 rotate_angle=0.0,
-                 preserve_pattern=True,
-                 metadata=None):
-
-        """
-        Cairo Minimal Object
-        Provides shared methods uniform across all Cairo Minimal Objects
-
-        Keyword Arguments:
-            fill_color (colour.Color, None): Shape Fill Color. If None, will not fill shape
-            fill_alpha (float): Shape Fill alpha composite
-            outline_color (colour.Color): Shape Outline Color
-            outline_alpha (float): Shape Outline Alpha Composite
-            outline_width (float): Shape Outline Width
-            scalex (float): X-Axis Scaler
-            scaley (float): Y-Axis Scaler
-            rotate_angle (float): Rotation of Shape (in Radians) #TODO: I think it wants it in degrees
-            preserve_pattern (bool): Preserve pattern upon location transformation
-            metadata (None, dict): Set shape metadata
-        """
+                 fill_color: Optional[Type[Color]] = Color(rgb=(0, 0, 0)),
+                 fill_alpha: Optional[float] = 1.0,
+                 outline_color: Optional[Type[Color]] = Color(rgb=(1, 1, 1)),
+                 outline_alpha: Optional[float] = 1.0,
+                 outline_width: Optional[float] = 1.0,
+                 scalex: Optional[float] = 1.0,
+                 scaley: Optional[float] = 1.0,
+                 rotate_angle: Optional[float] = 0.0,
+                 preserve_pattern: Optional[bool] = True,
+                 metadata: Optional[Dict] = None) -> None:
 
         self.fill_color, self.fill_alpha = fill_color, fill_alpha
         self.outline_color, self.outline_alpha = outline_color, outline_alpha
@@ -63,57 +90,81 @@ class CairoMinimalObject:
         self.pattern = None
         self.preserve_pattern = None
 
-    def linear_gradient(self, color, xy1=None, xy2=None, alpha=1.0, offset=1):
+    def linear_gradient(self,
+                        color: Type[Color],
+                        xy1: Optional[List[float, float]] = None,
+                        xy2: Optional[List[float, float]] = None,
+                        alpha: Optional[float] = 1.0,
+                        offset: Optional[float] = 1.0) -> None:
         """
-        Creates a linear gradient fill from provided coordinates and additional color
+        Creates a linear gradient fill from provided coordinates and color
 
         Notes:
-            Gradient can be called multiple times, with only the first needing linear space
-            coordinate definitions
+            Gradient can be called multiple times, with only the first needing
+            linear space coordinate definitions
             First gradient color will be CairoMinimalObject defined fill_color
 
         Keyword Arguments:
             color (colour.Color): Color for gradient space
-            xy1 (list: float): Beginning coordinates for linear gradient colorspace, defined as (x1, y1)
-            xy2 (list: float): Ending coordinates for linear gradient colorspace, defined as (x2, y2)
-            alpha (float): Gradient Color alpha composite
-            offset (float): Range value 0-1 where defined color is sole color in gradient colorspace
+            xy1 (list: float, optional): Beginning coordinates for linear
+                gradient colorspace, defined as (x1, y1)
+            xy2 (list: float, optional): Ending coordinates for linear gradient
+                colorspace, defined as (x2, y2)
+            alpha (float, optional): Gradient Color alpha composite
+            offset (float, optional): Range value 0-1 where defined color is
+                sole color in gradient colorspace
         """
 
         if not self.pattern:
             self.pattern = LinearGradient(*xy1, *xy2)
-            self.pattern.add_color_stop_rgba(0, *self.fill_color.get_rgb(), self.fill_alpha)
-            self.pattern.add_color_stop_rgba(offset, *color.get_rgb(), alpha)
+            self.pattern.add_color_stop_rgba(0,
+                                             *self.fill_color.get_rgb(),
+                                             self.fill_alpha)
+            self.pattern.add_color_stop_rgba(offset,
+                                             *color.get_rgb(),
+                                             alpha)
         else:
             self.pattern.add_color_stop_rgba(offset, *color.get_rgb(), alpha)
 
-    def radial_gradient(self, color, cr1=None, cr2=None, alpha=1.0, offset=1):
+    def radial_gradient(self,
+                        color: Type[Color],
+                        cr1: Optional[List[float, float]] = None,
+                        cr2: Optional[List[float, float]] = None,
+                        alpha: Optional[float] = 1.0,
+                        offset: Optional[float] = 1.0) -> None:
         """
-        Creates a radial gradient fill from provided radial coordinates and additional color
+        Creates a radial gradient fill from provided radial coordinates and color
 
         Notes:
-            Gradient can be called multiple times, with only the first needing radial space
-            coordinate definitions
+            Gradient can be called multiple times, with only the first needing
+            radial space coordinate definitions
             First gradient color will be CairoMinimalObject defined fill_color
 
         Keyword Arguments:
             color (colour.Color): Color for gradient space
-            cr1 (list: float): Beginning coordinates for radial gradient colorspace, defined as (cx1, cy1, r1)
-            cr2 (list: float): Ending coordinates for radial gradient colorspace, defined as (cx1, cy2, r2)
-            alpha (float): Gradient Color alpha composite
-            offset (float): Range value 0-1 where defined color is sole color in gradient colorspace
+            cr1 (list: float, optional): Beginning coordinates for radial
+                gradient colorspace, defined as (cx1, cy1, r1)
+            cr2 (list: float, optional): Ending coordinates for radial gradient
+                colorspace, defined as (cx1, cy2, r2)
+            alpha (float, optional): Gradient Color alpha composite
+            offset (float, optional): Range value 0-1 where defined color is
+                sole color in gradient colorspace
         """
 
         if not self.pattern:
             self.pattern = RadialGradient(*cr1, *cr2)
-            self.pattern.add_color_stop_rgba(0, *self.fill_color.get_rgb(), self.fill_alpha)
-            self.pattern.add_color_stop_rgba(offset, *color.get_rgb(), alpha)
+            self.pattern.add_color_stop_rgba(0,
+                                             *self.fill_color.get_rgb(),
+                                             self.fill_alpha)
+            self.pattern.add_color_stop_rgba(offset,
+                                             *color.get_rgb(),
+                                             alpha)
         else:
             self.pattern.add_color_stop_rgba(offset, *color.get_rgb(), alpha)
 
         return None
 
-    def _draw(self, canvas):
+    def _draw(self, canvas: Type[cairo.Canvas]):
         """
         Base Cairo Minimal Object Drawing Method
         What makes an object compatible with the minimal framework is the _draw
@@ -122,16 +173,18 @@ class CairoMinimalObject:
         object, the base draw can be before or after the specific object)
         """
 
-        if self.fill_color: # self.fill_color can be NoneType for only outlined objects
+        if self.fill_color: # self.fill_color can be None for outlined objects
             if self.pattern:
                 canvas.set_source(self.pattern)
             else:
-                canvas.set_source_rgba(*self.fill_color.get_rgb(), self.fill_alpha)
+                canvas.set_source_rgba(*self.fill_color.get_rgb(),
+                                       self.fill_alpha)
 
         if not isinstance(self, Text):
             if self.fill_color:
                 canvas.fill_preserve()
-            canvas.set_source_rgba(*self.outline_color.get_rgb(), self.outline_alpha)
+            canvas.set_source_rgba(*self.outline_color.get_rgb(),
+                                   self.outline_alpha)
             canvas.set_line_width(self.outline_width)
 
         canvas.stroke()
@@ -140,12 +193,13 @@ class CairoMinimalObject:
         if self.preserve_pattern and issubclass(type(self.pattern), Gradient):
             self._preserve_pattern()
 
-    def copy(self):
+    def copy(self) -> CairoMinimalObject:
         """
         Return a deepcopy of Shape Object
 
         Notes:
-            Gradient Objects not pickleable so we will just temporarily store it and reassign
+            Gradient Objects not pickleable so we will just temporarily store
+            it and reassign
         """
 
         pattern = self.pattern
@@ -158,18 +212,18 @@ class CairoMinimalObject:
 
         return copy
 
-    def translate(self, shift):
+    def translate(self, shift: List[float, float]) -> None:
         """
         Translates Shape by Some Shift
 
         Notes:
             Shift can take its argument as either a float or a tuple of floats.
             If float, value specified will apply uniformly to x and y.
-            If tuple, values specified will take dx as the first item, dy as the second item
-            Polygons apply translate shift to all points automatically
+            If tuple, values specified will take dx as the first item, dy as the
+            second item. Polygons apply translate shift to all points automatically
 
         Keyword Arguments:
-            shift (float, tuple): Value to shift
+            shift (list: float): Value to shift
         """
 
         if isinstance(shift, tuple):
@@ -189,9 +243,10 @@ class CairoMinimalObject:
         if self.preserve_pattern:
             self._preserve_pattern()
 
-    def _preserve_pattern(self):
+    def _preserve_pattern(self) -> None:
         """
-        Preserves pattern by after calling a method that changes the position of the shape
+        Preserves pattern by after calling a method that changes the position
+        of the shape
         """
 
         if isinstance(self.pattern, RadialGradient):
@@ -216,7 +271,7 @@ class CairoMinimalObject:
                offset = color_stop[0]
                )
 
-    def transform(self, at_end="restart", **kwargs):
+    def transform(self, at_end: str = "restart", **kwargs) -> None:
         """
         Transform Attributes of Objects
 
@@ -226,12 +281,15 @@ class CairoMinimalObject:
             iterative to the next state of assigned tranformations
 
             at_end supports the following movement endings:
-                restart: At end of path, will restart from original cx, cy and run through same path
-                reverse: At end of path, will reverse course and follow path in opposite direction
+                restart: At end of path, will restart from original cx, cy and
+                    run through same path
+                reverse: At end of path, will reverse course and follow path
+                    in opposite direction
                 stop: At end of path, will stay at last coordinate in path
 
         Keyword Arguments:
             at_end (str): Specifies what happens to movement at end of path
+            **kwargs: Transformation variable with respective tranformation
         """
 
         if kwargs:
@@ -244,12 +302,14 @@ class CairoMinimalObject:
                     elif at_end == "stop":
                         _iter = chain(t, cycle([t[-1]]))
                     else:
-                        raise KeyError("at_end specification not recognized, select a supported method")
+                        raise KeyError("at_end specification not recognized",
+                                       "select a supported method")
 
                     setattr(self, f"_{kwarg}", _iter)
 
                 else:
-                    raise AttributeError(f"Variable provided is not transformable: {kwarg}")
+                    raise AttributeError("Variable provided is not transformable: ",
+                                         f"{kwarg}")
 
         else:
             for transformable_variable in self._TRANSFORMABLE_VARIABLES:
@@ -270,7 +330,9 @@ class CairoMinimalObject:
                     else:
                         setattr(self, transformable_variable, next(getattr(self, f"_{transformable_variable}")))
 
-    def transform_axis(self, canvas, method):
+    def transform_axis(self,
+                       canvas: Union[Type[display.Canvas], Type[display.Frame]],
+                       method: str) -> None:
         """
         Scales Cairo + Canvas objects
 
@@ -280,12 +342,13 @@ class CairoMinimalObject:
             'down' scale Return scale to base 1.0, 1.0
 
         Keyword Arguments:
-            canvas (Display.Canvas): Minimal Canvas
+            canvas (display.Canvas, display.Frame): Minimal Display object
             method (str): Scaler method
         """
         if method == 'up':
             canvas.scale(self.scalex, self.scaley)
-            if self.rotate_angle: #TODO: rotate_angle works, but it doesnt really rotate around center/point
+            if self.rotate_angle:
+                #TODO: rotate_angle works, but doesnt rotate around center/point
                 # canvas.translate(self.x, self.y)
                 canvas.rotate(self.rotate_angle)
 
