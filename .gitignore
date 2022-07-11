@@ -113,5 +113,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Development Version
-dev/
+# Miscellenous Scripts
+dev/misc/
