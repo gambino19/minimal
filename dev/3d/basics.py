@@ -62,23 +62,24 @@ class mesh:
 
         self.tris = np.array([arg.p for arg in args])
 
-    def w_matmul(self, other):
-        """ DOCSTRING """
-        tris = np.append(self.tris, np.ones((len(self.tris), 3, 1)), axis=-1)
-        o = tris @ other
-        tris, w = o[:,:,:3], o[:,:,-1].reshape((-1, 3, 1))
-        w = np.where(w==0, 1, w)
-        return tris / w
-
     def __repr__(self):
         return repr(self.tris.reshape((1,-1,9)))
 
-def MultiplyMatrixVector(point, matrix):
+def w_pad(point):
     """ DOCSTRING """
-    o = point @ matrix
-    if o[-1] != 0.0:
-        o /= o[-1]
-    return o
+    if len(point.shape) == 2: # Single point
+        point = point.reshape((1, 3, 1))
+    c, r, _ = point.shape
+    return np.append(point, np.ones((c, r, 1)), axis=-1)
+
+def w_matmul(i, j, pad=True):
+    """ DOCSTRING """
+    if pad:
+        i = w_pad(i)
+    o = i @ j
+    i, w = o[:,:,:3], o[:,:,-1].reshape((-1, 3, 1))
+    w = np.where(w==0, 1, w)
+    return i / w
 
 def DrawTriangle(x1, y1, x2, y2, x3, y3, canvas):
     canvas.add(objects.Line((x1, y1), (x2, y2), div=2))
@@ -127,10 +128,10 @@ meshCube = mesh(
     triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 0.0, 0.0), vec3d(1.0, 0.0, 0.0)),
     )
 
-meshCube.tris = meshCube.w_matmul(matRotZ)
-meshCube.tris = meshCube.w_matmul(matRotX)
+meshCube.tris = w_matmul(meshCube.tris, matRotZ)
+meshCube.tris = w_matmul(meshCube.tris, matRotX)
 meshCube.tris = meshCube.tris + np.repeat(np.array([[0.0, 0.0, 3.0]]), 3, axis=0) # Just need for Z
-meshCube.tris = meshCube.w_matmul(matProj)
+meshCube.tris = w_matmul(meshCube.tris, matProj)
 meshCube.tris = meshCube.tris + np.repeat(np.array([[1.0, 1.0, 0.0]]), 3, axis=0) # Just need for X and Y
 meshCube.tris = meshCube.tris * np.repeat(np.array([[0.5 * Width, 0.5 * Height, 1.0]]), 3, axis=0)
 for tri in meshCube.tris:
