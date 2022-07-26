@@ -64,7 +64,7 @@ class geometry:
 
         norm_vec = np.cross(arr[:,1,:]-arr[:,0,:],arr[:,2,:]-arr[:,0,:])
         if normalize:
-            norm_vec / np.sqrt(np.sum(norm_vec**2, axis=1, keepdims=True))
+            norm_vec /= np.sqrt(np.sum(norm_vec**2, axis=1, keepdims=True))
 
         return norm_vec
 
@@ -132,7 +132,7 @@ class Triangle:
 
 class Mesh:
     """ DOCSTRING """
-    def __init__(self, *args, wireframe=True, shaded=False):
+    def __init__(self, *args, wireframe=True):
 
         if not len(args):
             self.vertices = np.array([])
@@ -142,7 +142,12 @@ class Mesh:
         self._tris = self.vertices.copy()
 
         self.normals = None
+        self.visible_mask = None
         self.fill_color = None
+        self.textures = {}
+
+        self.wireframe = wireframe
+
         self.order = display.Order()
 
     def from_obj(self, fp):
@@ -179,17 +184,30 @@ class Mesh:
     def visible(self, camera=vec3d(x=0, y=0, z=0)):
         """ DOCSTRING """
 
-        self.normals = geometry.normal(self.vertices)
-        mask = np.sum(self.normals * (self.vertices[:,0,:] - camera.xyz), axis=1) < 0.0
-        self.vertices = self.vertices[mask]
+        self.textures['visible'] = {"func": self._visible, "params": (camera,)}
 
-    def illuminate(self, light_direction=vec3d(0.0, 0.0, -1.0)): #TODO: Seems like this is broken
+    def _visible(self, camera):
         """ DOCSTRING """
 
+        self.normals = geometry.normal(self.vertices)
+        self.visible_mask = np.sum(self.normals * (self.vertices[:,0,:] - camera.xyz), axis=1) < 0.0
+        self.vertices = self.vertices[self.visible_mask]
+
+    def illuminate(self, light_direction=vec3d(0.0, 0.0, -1.0)):
+        """ DOCSTRING """
+
+        self.textures['illuminate'] = {"func": self._illuminate, "params": (light_direction,)}
+        self.textures['shaded'] = {"func": self._shaded, "params": ()}
+
+    def _illuminate(self, light_direction=vec3d(0.0, 0.0, -1.0)): #TODO: Seems like this is broken
+        """ DOCSTRING """
+        # TODO: Techincally, illuminate will produce an illumination for all faces and not just ones that are left
+        normals = self.normals[self.visible_mask] if 'visible' in self.textures else self.normal
         light_direction.xyz = light_direction.xyz / np.sqrt(np.sum(light_direction.xyz**2, axis=1))
-        dp = self.normals @ light_direction.xyz.T
-        dp = np.where(dp < 0.0, 0.0, dp)
-        self.fill_color = [Color(luminance=0.60+i*0.5) for i in dp] # TODO: Work on better illumination color code
+        dp = normals @ light_direction.xyz.T
+        # dp = np.where(dp < 0.0, 0.0, dp)
+        print(dp)
+        self.fill_color = [Color(luminance=0.6) for i in dp] # TODO: Work on better illumination color code
 
     def project(self, canvas):
         """ DOCSTRING """
@@ -201,7 +219,7 @@ class Mesh:
 
         self.vertices = self.vertices[(np.sum(self.vertices[:,:,-1], axis=1) / 3).argsort()]
 
-    def wireframe(self):
+    def _wireframe(self):
         """ DOCSTRING """
 
         for tri in self.vertices:
@@ -214,16 +232,33 @@ class Mesh:
 
         return [Triangle(vertex[0,:], vertex[1,:], vertex[2,:]) for vertex in self.vertices]
 
-    def fill(self):
+    def _shaded(self):
         """ DOCSTRING """
+
         for triangle, color in zip(self.triangles(), self.fill_color):
             self.order.extend(triangle.fill(color))
 
     def _draw(self, canvas):
         """ DOCSTRING """
 
+
+        self.project(canvas)
+
+        # Scale into view
+        self.translate(x=1.0, y=1.0)# [-1, 1] -> [0,2]
+        self.translate(x=0.5*canvas.width, y=0.5*canvas.height, z=1.0, method="mul")
+
+        self.sort()
+
+        for texture in self.textures:
+            self.textures[texture]['func'](*self.textures[texture]['params'])
+
+        if self.wireframe:
+            self._wireframe()
+
+
         for line in self.order:
-            line._draw(canvas)
+            line._draw(canvas.canvas)
 
 def w_pad(point):
     """ DOCSTRING """
@@ -241,51 +276,48 @@ def w_matmul(i, j, pad=True):
     w = np.where(w==0, 1, w)
     return i / w
 
-for i in range(30):
+for i in range(10):
     canvas = display.Frame(Width, Height)
+    canvas.mat_project = matProj
 
     vCamera = vec3d(0.0, 0.0, 0.0)
-    # meshCube = mesh(
-    #     # South
-    #     Triangle(vec3d(0.0, 0.0, 0.0), vec3d(0.0, 1.0, 0.0), vec3d(1.0, 1.0, 0.0)),
-    #     Triangle(vec3d(0.0, 0.0, 0.0), vec3d(1.0, 1.0, 0.0), vec3d(1.0, 0.0, 0.0)),
+    meshCube = Mesh(
+        # South
+        Triangle(vec3d(0.0, 0.0, 0.0), vec3d(0.0, 1.0, 0.0), vec3d(1.0, 1.0, 0.0)),
+        Triangle(vec3d(0.0, 0.0, 0.0), vec3d(1.0, 1.0, 0.0), vec3d(1.0, 0.0, 0.0)),
 
-    #     # East
-    #     Triangle(vec3d(1.0, 0.0, 0.0), vec3d(1.0, 1.0, 0.0), vec3d(1.0, 1.0, 1.0)),
-    #     Triangle(vec3d(1.0, 0.0, 0.0), vec3d(1.0, 1.0, 1.0), vec3d(1.0, 0.0, 1.0)),
+        # East
+        Triangle(vec3d(1.0, 0.0, 0.0), vec3d(1.0, 1.0, 0.0), vec3d(1.0, 1.0, 1.0)),
+        Triangle(vec3d(1.0, 0.0, 0.0), vec3d(1.0, 1.0, 1.0), vec3d(1.0, 0.0, 1.0)),
 
-    #     # North
-    #     Triangle(vec3d(1.0, 0.0, 1.0), vec3d(1.0, 1.0, 1.0), vec3d(0.0, 1.0, 1.0)),
-    #     Triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 1.0, 1.0), vec3d(0.0, 0.0, 1.0)),
+        # North
+        Triangle(vec3d(1.0, 0.0, 1.0), vec3d(1.0, 1.0, 1.0), vec3d(0.0, 1.0, 1.0)),
+        Triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 1.0, 1.0), vec3d(0.0, 0.0, 1.0)),
 
-    #     # West
-    #     Triangle(vec3d(0.0, 0.0, 1.0), vec3d(0.0, 1.0, 1.0), vec3d(0.0, 1.0, 0.0)),
-    #     Triangle(vec3d(0.0, 0.0, 1.0), vec3d(0.0, 1.0, 0.0), vec3d(0.0, 0.0, 0.0)),
+        # West
+        Triangle(vec3d(0.0, 0.0, 1.0), vec3d(0.0, 1.0, 1.0), vec3d(0.0, 1.0, 0.0)),
+        Triangle(vec3d(0.0, 0.0, 1.0), vec3d(0.0, 1.0, 0.0), vec3d(0.0, 0.0, 0.0)),
 
-    #     # Top
-    #     Triangle(vec3d(0.0, 1.0, 0.0), vec3d(0.0, 1.0, 1.0), vec3d(1.0, 1.0, 1.0)),
-    #     Triangle(vec3d(0.0, 1.0, 0.0), vec3d(1.0, 1.0, 1.0), vec3d(1.0, 1.0, 0.0)),
+        # Top
+        Triangle(vec3d(0.0, 1.0, 0.0), vec3d(0.0, 1.0, 1.0), vec3d(1.0, 1.0, 1.0)),
+        Triangle(vec3d(0.0, 1.0, 0.0), vec3d(1.0, 1.0, 1.0), vec3d(1.0, 1.0, 0.0)),
 
-    #     # Bottom
-    #     Triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 0.0, 1.0), vec3d(0.0, 0.0, 0.0)),
-    #     Triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 0.0, 0.0), vec3d(1.0, 0.0, 0.0)),
-    #     )
+        # Bottom
+        Triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 0.0, 1.0), vec3d(0.0, 0.0, 0.0)),
+        Triangle(vec3d(1.0, 0.0, 1.0), vec3d(0.0, 0.0, 0.0), vec3d(1.0, 0.0, 0.0)),
+        )
 
-    meshCube = Mesh()
-    meshCube.from_obj("./tulip.obj")
+    # meshCube = Mesh()
+    # meshCube.from_obj("./tulip.obj")
 
     meshCube.rotate('z', fTheta+i*0.1)
-    # meshCube.rotate('y', 10+i*0.1)
+    # meshCube.rotate('y', fTheta+i*0.1)
     meshCube.rotate('x', fTheta*0.5+i*0.1)
-    meshCube.translate(x=-5, y=-5, z=4.0)
+    meshCube.translate(z=8.0)
 
     meshCube.visible()
     meshCube.illuminate()
-    meshCube.project(CANVAS)
-    meshCube.translate(x=1.0, y=1.0)
-    meshCube.translate(x=0.5*Width, y=0.5*Height, z=1.0, method="mul")
-    meshCube.sort()
-    meshCube.wireframe()
+
     # meshCube.fill()
     canvas.add(meshCube)
     CANVAS.add(canvas)
@@ -293,7 +325,7 @@ for i in range(30):
     #     DrawTriangle(*tri[:, :-1].reshape(-1), canvas)
         # canvas.add(Triangle(tri[0, :], tri[1, :], tri[2, :]).fill(col))
     # CANVAS.add(canvas)
-CANVAS.fps = 30
+CANVAS.fps = 1
 CANVAS.show()
 
 # Testing condition for Unit Mesh Cube: %timeit -n 100 with 100 internal frame it
